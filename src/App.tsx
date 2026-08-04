@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import './App.css'
+import ParteForm from './components/ParteForm'
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>
@@ -100,6 +101,8 @@ function App() {
           <p>El manifest y los iconos habilitan la instalación.</p>
         </article>
       </section>
+
+      <ParteForm />
 
       <section className="howto">
         <h2>Cómo probar el modo offline</h2>
