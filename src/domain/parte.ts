@@ -29,3 +29,7 @@ export interface ParteView {
 }
 
 export type ParteInput = Omit<ParteDoc, 'id' | 'dispositivoId' | 'creadoEn'>
+
+// Identidad del dispositivo en la PoC. En Fase 1 real lo asigna el backend
+// tras autenticar al técnico y registrar el equipo.
+export const DEVICE_ID = 'poc-device-001'

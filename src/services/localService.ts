@@ -1,11 +1,10 @@
 import { localRepository, type ParteRepository } from '../repositories/localRepository'
-import type { ParteDoc, ParteInput, ParteView } from '../domain/parte'
-
-export const DEVICE_ID = 'poc-device-001'
+import { enqueueParte } from '../sync/outbox'
+import { DEVICE_ID, type ParteDoc, type ParteInput, type ParteView } from '../domain/parte'
 
 // ---- Servicio de aplicación (casos de uso) ----
-// Orquesta la lógica de negocio (construir el doc, asignar id/dispositivo)
-// y delega la persistencia en el repositorio inyectado.
+// Orquesta la lógica de negocio (construir el doc, asignar id/dispositivo,
+// encolar la operación de sync) y delega la persistencia en el repositorio.
 // NO conoce Dexie ni Web Crypto; depende de la interfaz ParteRepository.
 export class LocalService {
   private readonly repo: ParteRepository
@@ -22,6 +21,13 @@ export class LocalService {
       creadoEn: new Date().toISOString(),
     }
     await this.repo.save(doc)
+    // Outbox: si este paso falla, el parte quedó local sin cola — la PoC lo
+    // registra y continúa; Fase 1 real reconstruiría la cola al detectar la brecha.
+    try {
+      await enqueueParte(doc)
+    } catch (err) {
+      console.warn('No se pudo encolar en el outbox', err)
+    }
   }
 
   listarPartes(): Promise<ParteView[]> {

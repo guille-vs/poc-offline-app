@@ -18,15 +18,35 @@ interface ClaveRow {
   material: string // base64(raw key)
 }
 
+// Outbox: la cola de operaciones pendientes de sincronizar.
+// El payload se guarda CIFRADO (mismo formato que el parte) — solo se
+// descifra en memoria al momento de enviar. estado 'procesado' = confirmado
+// por el server (o descartado por duplicado de idempotencia).
+export interface OutboxRow {
+  id: string
+  parteId: string
+  tipo: string
+  idempotencyKey: string
+  payloadCifrado: string
+  estado: 'pendiente' | 'procesado'
+  creadoEn: string
+}
+
 class PocDB extends Dexie {
   partes!: Table<ParteRow, string>
   claves!: Table<ClaveRow, string>
+  outbox!: Table<OutboxRow, string>
 
   constructor() {
     super('minetrace-poc')
     this.version(1).stores({
       partes: 'id, dispositivoId, sincronizado',
       claves: 'id',
+    })
+    this.version(2).stores({
+      partes: 'id, dispositivoId, sincronizado',
+      claves: 'id',
+      outbox: 'id, parteId, estado',
     })
   }
 }

@@ -192,6 +192,45 @@
 }
 
 .list-card {
+  .sync-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+
+    button {
+      border: 1px solid #38bdf8;
+      color: #38bdf8;
+      background: transparent;
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 13px;
+      cursor: pointer;
+
+      &:hover:not(:disabled) {
+        background: rgba(56, 189, 248, 0.12);
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+    }
+
+    .sync-info {
+      font-size: 13px;
+
+      &.ok {
+        color: #34d399;
+      }
+
+      &.error {
+        color: #f87171;
+      }
+    }
+  }
+
   .empty {
     margin: 0;
     color: #94a3b8;

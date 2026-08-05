@@ -1,6 +1,8 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { localService } from '../services/localService'
+import { syncService } from '../services/syncService'
 import type { Parada, ParteView } from '../domain/parte'
+import type { ResultadoSync } from '../sync/sender'
 
 interface FormState {
   fecha: string
@@ -31,11 +33,27 @@ export default function ParteForm() {
   const [partes, setPartes] = useState<ParteView[]>([])
   const [form, setForm] = useState<FormState>(EMPTY)
   const [error, setError] = useState('')
+  const [syncInfo, setSyncInfo] = useState<ResultadoSync | null>(null)
+  const [sincronizando, setSincronizando] = useState(false)
 
   const refresh = async () => setPartes(await localService.listarPartes())
 
+  const sincronizar = async () => {
+    setSincronizando(true)
+    try {
+      const resultado = await syncService.sincronizar()
+      setSyncInfo(resultado)
+    } finally {
+      setSincronizando(false)
+    }
+    await refresh()
+  }
+
   useEffect(() => {
     void refresh()
+    // Al abrir la app, intenta vaciar la cola pendiente (si hay red).
+    void sincronizar()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleSubmit = async (e: FormEvent) => {
@@ -63,6 +81,7 @@ export default function ParteForm() {
             : [],
       })
       setForm(EMPTY)
+      await sincronizar()
       await refresh()
     } catch (err) {
       setError(`No se pudo guardar: ${err instanceof Error ? err.message : String(err)}`)
@@ -147,6 +166,20 @@ export default function ParteForm() {
 
       <div className="list-card">
         <h2>Partes guardados ({partes.length})</h2>
+        <div className="sync-bar">
+          <button type="button" onClick={() => void sincronizar()} disabled={sincronizando}>
+            {sincronizando ? 'Sincronizando…' : 'Sincronizar ahora'}
+          </button>
+          {syncInfo && (
+            <span className={`sync-info ${syncInfo.error ? 'error' : 'ok'}`}>
+              {syncInfo.error
+                ? `Server no disponible (${syncInfo.error}) — ${syncInfo.pendientes} pendientes`
+                : syncInfo.pendientes > 0
+                  ? `${syncInfo.enviados} enviados, ${syncInfo.pendientes} pendientes`
+                  : `${syncInfo.enviados} enviados · cola vacía`}
+            </span>
+          )}
+        </div>
         {partes.length === 0 ? (
           <p className="empty">
             Todavía no hay partes. Crea uno: se guarda cifrado en IndexedDB y sobrevive al recargar.
